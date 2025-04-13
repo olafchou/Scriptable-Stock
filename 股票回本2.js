@@ -27,47 +27,35 @@ function saveTodayStockStatus(status) {
 
 // 配置信息
 const MY_STOCKS = [
-  { code: "sh600061", cost: 8.225 }, // 国投资本
-  { code: "sh600211", cost: 40.626 }, // 西藏药业
-  { code: "sz300663", cost: 23.921 }, // 科蓝软件
-  { code: "sz300212", cost: 29.152 }, // 易华录
-  { code: "sz000878", cost: 13.709 }, // 云南铜业
-  { code: "sh600685", cost: 25.091 }, // 中船防务
-  { code: "sz000831", cost: 31.089 }, // 中国稀土
-  { code: "sh600657", cost: 5.33 }, // 信达地产
-  { code: "sz300341", cost: 25.167 }, // 麦克奥迪
-  { code: "sz300366", cost: 12.971 }, // 创意信息
-  { code: "sz300337", cost: 15.741 }, // 银邦股份
-  { code: "sz002273", cost: 25 }, // 水晶光电
-  { code: "sh601608", cost: 4.508 }, // 中信重工
-  { code: "sh603650", cost: 41.8}, // 彤程新材
-  { code: "sz300547", cost:20.578 }, // 川环科技
-  { code: "sh512480", cost: 1.125 }, // 半导体ETF
-  { code: "sh561910", cost: 0.549 }, // 电池ETF
+  { code: "sz300757", cost: 166.524 }, // 罗博特科
+  { code: "bj430510", cost: 23.697 }, // 丰光精密
+  { code: "sh600657", cost: 5.165 }, // 信达地产
+  { code: "bj831832", cost: 32.437 }, // 科达自控
+  { code: "bj832522", cost: 66.677 }, // 纳克若尔
+  { code: "sz000099", cost: 27.201 }, // 中信海直
+  { code: "sz300547", cost: 37.368 }, // 川环科技
+  { code: "sz002194", cost: 13.8 }, // 武汉凡谷
+  { code: "sz300364", cost: 27.208 }, // 中文在线
+  { code: "sz000415", cost: 3.91}, // 渤海租赁
+  { code: "sz002130", cost: 24.912}, // 沃尔核材
+  { code: "sz002241", cost: 30}, // 歌尔股份
 ]
 
 // 获取股票名称映射
 function getStockName(code) {
   const stockMap = {
-    'sh600061': '国投资本',
-    'sh600211': '西藏药业',
-    'sz300663': '科蓝软件',
-    'sz300212': '易华录',
-    'sz000878': '云南铜业',
-    'sh600685': '中船防务',
-    'sz000831': '中国稀土',
+    'sz300757': '罗博特科',
+    'bj430510': '丰光精密',
     'sh600657': '信达地产',
-    'sz300341': '麦克奥迪',
-    'sz300366': '创意信息',
-    'sz300337': '银邦股份',
-    'sz002837': '英维克',
-    'sz002273': '水晶光电',
-    'sh601608': '中信重工',
-    'sh603650': '彤程新材',
+    'bj831832': '科达自控',
+    'bj832522': '纳克若尔',
+    'sz000099': '中信海直',
     'sz300547': '川环科技',
-    'sh512480': '半导体ETF',
-    'sh561910': '电池ETF',
-    'sh000001': '上证指数'
+    'sz002194': '武汉凡谷',
+    'sz300364': '中文在线',
+    'sz000415': '渤海租赁',
+    'sz002130': '沃尔核材',
+    'sz002241': '歌尔股份',
   }
   return stockMap[code] || code
 }
@@ -107,8 +95,21 @@ async function fetchStockData(code) {
     change_percent: changePercent
   }
   
+  // 根据不同板块判断涨停标准
+  function getLimitUpThreshold(stockCode) {
+    if (stockCode.startsWith('sz300') || stockCode.startsWith('sh688')) {
+      return 19.9; // 创业板和科创板 20%
+    } else if (stockCode.startsWith('bj')) {
+      return 29.9; // 北交所 30%
+    } else {
+      return 9.9; // 主板 10%
+    }
+  }
+
   // 检查是否涨停或回本
-  const isLimitUp = parseFloat(changePercent) >= 9.9
+  const limitUpThreshold = getLimitUpThreshold(code);
+  const isLimitUp = parseFloat(changePercent) >= limitUpThreshold;
+  
   const isBreakEven = MY_STOCKS.find(s => s.code === code)?.cost <= price
   
   // 如果涨停或回本，缓存数据
@@ -329,3 +330,4 @@ if (config.runsInWidget) {
 
 console.log(`[${new Date().toLocaleString()}] 脚本执行完成`)
 Script.complete()
+
