@@ -27,7 +27,7 @@ function saveTodayStockStatus(status) {
 
 // 配置信息
 const MY_STOCKS = [
-  { code: "sz300757", cost: 166.524 }, // 罗博特科
+  { code: "sz300757", cost: 210 }, // 罗博特科
   { code: "bj430510", cost: 23.697 }, // 丰光精密
   { code: "sh600657", cost: 5.165 }, // 信达地产
   { code: "bj831832", cost: 32.437 }, // 科达自控
@@ -58,6 +58,17 @@ function getStockName(code) {
     'sz002241': '歌尔股份',
   }
   return stockMap[code] || code
+}
+
+// 根据不同板块判断涨停标准
+function getLimitUpThreshold(stockCode) {
+  if (stockCode.startsWith('sz300') || stockCode.startsWith('sh688')) {
+    return 19.9; // 创业板和科创板 20%
+  } else if (stockCode.startsWith('bj')) {
+    return 29.9; // 北交所 30%
+  } else {
+    return 9.9; // 主板 10%
+  }
 }
 
 // 获取股票数据
@@ -95,19 +106,9 @@ async function fetchStockData(code) {
     change_percent: changePercent
   }
   
-  // 根据不同板块判断涨停标准
-  function getLimitUpThreshold(stockCode) {
-    if (stockCode.startsWith('sz300') || stockCode.startsWith('sh688')) {
-      return 19.9; // 创业板和科创板 20%
-    } else if (stockCode.startsWith('bj')) {
-      return 29.9; // 北交所 30%
-    } else {
-      return 9.9; // 主板 10%
-    }
-  }
-
   // 检查是否涨停或回本
   const limitUpThreshold = getLimitUpThreshold(code);
+  console.log(`[${new Date().toLocaleString()}] ${code} 涨跌幅: ${changePercent}%, 涨停阈值: ${limitUpThreshold}%`)
   const isLimitUp = parseFloat(changePercent) >= limitUpThreshold;
   
   const isBreakEven = MY_STOCKS.find(s => s.code === code)?.cost <= price
@@ -271,10 +272,12 @@ async function createWidget() {
     addBoldText(limitUpTitle, "涨停", Color.white(), 13)
     limitUpTitle.addSpacer()
     limitUpColumn.addSpacer(4)
-    const limitUpCount = stocksData.filter(stock => {
-      const isLimitUp = parseFloat(stock.change_percent) >= 9.9
+    const limitUpCount = stocksData.filter((stock, i) => {
+      const code = MY_STOCKS[i].code
+      const limitUpThreshold = getLimitUpThreshold(code)
+      const isLimitUp = parseFloat(stock.change_percent) >= limitUpThreshold
       if (isLimitUp) {
-        console.log(`[${new Date().toLocaleString()}] 发现涨停: ${stock.name}, 涨跌幅=${stock.change_percent}%`)
+        console.log(`[${new Date().toLocaleString()}] 发现涨停: ${stock.name}, 涨跌幅=${stock.change_percent}%, 涨停阈值=${limitUpThreshold}%`)
       }
       return isLimitUp
     }).length
